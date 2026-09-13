@@ -29,6 +29,7 @@ const artworks = await Promise.all(
         background: #000;
         color: #fff;
         font-family: "Courier New", Courier, monospace;
+        font-size: 16px;
       }
 
       * {
@@ -51,9 +52,9 @@ const artworks = await Promise.all(
         flex-wrap: wrap;
         align-items: flex-start;
         justify-content: center;
-        gap: 32px;
+        gap: 20px;
         width: 100%;
-        padding: 32px;
+        padding: 20px;
       }
 
       .artwork {
@@ -66,7 +67,7 @@ const artworks = await Promise.all(
         background: #000;
         color: #fff;
         overflow: auto;
-        --ascii-size: 12px;
+        --ascii-size: 8px;
       }
 
       .artwork:last-child {
@@ -89,20 +90,20 @@ const artworks = await Promise.all(
         padding: 0 12px;
         border-right: 1px solid #fff;
         color: #fff;
-        font: 700 12px/38px "Courier New", Courier, monospace;
+        font: 700 11px/30px "Courier New", Courier, monospace;
         white-space: nowrap;
       }
 
       button {
-        min-width: 88px;
-        min-height: 38px;
+        min-width: 64px;
+        min-height: 30px;
         border: 0;
         border-left: 1px solid #fff;
         border-bottom: 0;
         border-radius: 0;
         background: #fff;
         color: #000;
-        font: 700 12px/1 "Courier New", Courier, monospace;
+        font: 700 11px/1 "Courier New", Courier, monospace;
         text-transform: uppercase;
         cursor: pointer;
       }
@@ -120,7 +121,7 @@ const artworks = await Promise.all(
         width: max-content;
         max-width: 100%;
         margin: 0;
-        padding: 32px;
+        padding: 18px;
         overflow: auto;
         color: inherit;
         background: inherit;
@@ -156,17 +157,17 @@ const artworks = await Promise.all(
         min-width: 100%;
         min-height: calc(100vh - 39px);
         margin: 0;
-        padding: 32px;
+        padding: 20px;
         overflow: auto;
-        font: 14px/1 "Courier New", Courier, monospace;
+        font: 10px/1 "Courier New", Courier, monospace;
         letter-spacing: 0;
         white-space: pre;
       }
 
       @media (max-width: 700px) {
         .gallery {
-          gap: 18px;
-          padding: 18px;
+          gap: 14px;
+          padding: 14px;
         }
 
         .artwork {
@@ -179,9 +180,9 @@ const artworks = await Promise.all(
         }
 
         button {
-          min-width: 76px;
-          min-height: 34px;
-          font-size: 11px;
+          min-width: 54px;
+          min-height: 28px;
+          font-size: 10px;
         }
       }
     </style>
