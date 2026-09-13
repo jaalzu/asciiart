@@ -1,0 +1,290 @@
+---
+import { readdir, readFile } from "node:fs/promises";
+import { basename, extname, join } from "node:path";
+
+const artDir = process.cwd();
+const files = (await readdir(artDir))
+  .filter((file) => extname(file).toLowerCase() === ".txt")
+  .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+const artworks = await Promise.all(
+  files.map(async (file, index) => ({
+    id: `A${String(index + 1).padStart(3, "0")}`,
+    name: basename(file, ".txt"),
+    file,
+    text: await readFile(join(artDir, file), "utf8"),
+  })),
+);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASCII Art</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        background: #000;
+        color: #fff;
+        font-family: "Courier New", Courier, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #000;
+      }
+
+      body {
+        overflow-x: auto;
+      }
+
+      .gallery {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 32px;
+        width: 100%;
+        padding: 32px;
+      }
+
+      .artwork {
+        position: relative;
+        display: inline-block;
+        width: fit-content;
+        max-width: calc(100vw - 64px);
+        min-width: 0;
+        border: 1px solid #fff;
+        background: #000;
+        color: #fff;
+        overflow: auto;
+        --ascii-size: 12px;
+      }
+
+      .artwork:last-child {
+        border-bottom: 1px solid #fff;
+      }
+
+      .tools {
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 1px;
+        padding: 0;
+        border-bottom: 1px solid #fff;
+        background: #000;
+      }
+
+      .artwork-id {
+        margin-right: auto;
+        padding: 0 12px;
+        border-right: 1px solid #fff;
+        color: #fff;
+        font: 700 12px/38px "Courier New", Courier, monospace;
+        white-space: nowrap;
+      }
+
+      button {
+        min-width: 88px;
+        min-height: 38px;
+        border: 0;
+        border-left: 1px solid #fff;
+        border-bottom: 0;
+        border-radius: 0;
+        background: #fff;
+        color: #000;
+        font: 700 12px/1 "Courier New", Courier, monospace;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      button:hover,
+      button:focus-visible {
+        background: #000;
+        color: #fff;
+        outline: 1px solid #fff;
+        outline-offset: -1px;
+      }
+
+      .ascii {
+        display: block;
+        width: max-content;
+        max-width: 100%;
+        margin: 0;
+        padding: 32px;
+        overflow: auto;
+        color: inherit;
+        background: inherit;
+        font: var(--ascii-size) / 1 "Courier New", Courier, monospace;
+        letter-spacing: 0;
+        white-space: pre;
+      }
+
+      .preview {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: none;
+        background: #000;
+        color: #fff;
+      }
+
+      .preview[open] {
+        display: block;
+      }
+
+      .preview-bar {
+        position: sticky;
+        top: 0;
+        display: flex;
+        justify-content: flex-end;
+        border-bottom: 1px solid #fff;
+        background: #000;
+      }
+
+      .preview pre {
+        width: max-content;
+        min-width: 100%;
+        min-height: calc(100vh - 39px);
+        margin: 0;
+        padding: 32px;
+        overflow: auto;
+        font: 14px/1 "Courier New", Courier, monospace;
+        letter-spacing: 0;
+        white-space: pre;
+      }
+
+      @media (max-width: 700px) {
+        .gallery {
+          gap: 18px;
+          padding: 18px;
+        }
+
+        .artwork {
+          max-width: calc(100vw - 36px);
+        }
+
+        .ascii,
+        .preview pre {
+          padding: 18px;
+        }
+
+        button {
+          min-width: 76px;
+          min-height: 34px;
+          font-size: 11px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="gallery">
+      {
+        artworks.map((artwork) => (
+          <section class="artwork" data-name={artwork.name}>
+            <div class="tools">
+              <div class="artwork-id">{artwork.id} / {artwork.name}</div>
+              <button type="button" data-action="smaller">-</button>
+              <button type="button" data-action="bigger">+</button>
+              <button type="button" data-action="download">Download</button>
+              <button type="button" data-action="preview">Preview</button>
+            </div>
+            <pre class="ascii">{artwork.text}</pre>
+          </section>
+        ))
+      }
+    </main>
+
+    <dialog class="preview" aria-label="ASCII preview">
+      <div class="preview-bar">
+        <button type="button" data-action="close">Close</button>
+      </div>
+      <pre></pre>
+    </dialog>
+
+    <script>
+      const preview = document.querySelector(".preview");
+      const previewText = preview?.querySelector("pre");
+      const closeButton = preview?.querySelector('[data-action="close"]');
+
+      const downloadFile = (filename, content, type) => {
+        const blob = new Blob([content], { type });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      };
+
+      document.addEventListener("click", (event) => {
+        const button = event.target instanceof HTMLElement
+          ? event.target.closest("button")
+          : null;
+
+        if (!button) return;
+
+        const action = button.dataset.action;
+        const artwork = button.closest(".artwork");
+
+        if (action === "close") {
+          preview?.close();
+          return;
+        }
+
+        if (!artwork) return;
+
+        if (action === "smaller" || action === "bigger") {
+          const currentSize = Number.parseFloat(
+            getComputedStyle(artwork).getPropertyValue("--ascii-size"),
+          ) || 12;
+          const nextSize = action === "bigger"
+            ? Math.min(currentSize + 1, 24)
+            : Math.max(currentSize - 1, 6);
+
+          if (action === "smaller" && !artwork.style.width) {
+            const { width, height } = artwork.getBoundingClientRect();
+            artwork.style.width = `${width}px`;
+            artwork.style.height = `${height}px`;
+          }
+
+          if (action === "bigger") {
+            artwork.style.width = "";
+            artwork.style.height = "";
+          }
+
+          artwork.style.setProperty("--ascii-size", `${nextSize}px`);
+          return;
+        }
+
+        const name = artwork.dataset.name || "ascii-art";
+        const text = artwork.querySelector(".ascii")?.textContent || "";
+
+        if (action === "preview" && preview && previewText) {
+          previewText.textContent = text;
+          preview.showModal();
+        }
+
+        if (action === "download") {
+          downloadFile(`${name}.txt`, text, "text/plain;charset=utf-8");
+        }
+      });
+
+      closeButton?.addEventListener("click", () => preview?.close());
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && preview?.open) {
+          preview.close();
+        }
+      });
+    </script>
+  </body>
+</html>
